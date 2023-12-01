@@ -1,0 +1,205 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<unistd.h>
+#include<arpa/inet.h>
+#include<sys/types.h>
+#include<sys/socket.h>
+
+
+int main()
+{
+    char *ip="127.0.0.1";
+    int port=5566;
+    char buffer[1024];
+    float a,b,res;
+    int N;
+
+    int client_sock;
+    struct sockaddr_in client_addr;
+    client_sock=socket(AF_INET,SOCK_STREAM,0);
+    if(client_sock < 0)
+    {
+        perror("Socket Error");
+        exit(1);
+    }
+    printf("TCP client socket is Created\n");
+    memset(&client_addr,'\0',sizeof(client_addr));
+    client_addr.sin_family=AF_INET;
+    client_addr.sin_port=port;
+    client_addr.sin_addr.s_addr=inet_addr(ip);
+    connect(client_sock,(struct sockaddr*)&client_addr,sizeof(client_addr));
+    printf("Client connected to Server\n");
+    bzero(buffer,1024);
+    recv(client_sock,buffer,sizeof(buffer),0);
+    printf("Server : %s\n",buffer);
+    while(1)
+    {
+    printf("Server : Enter any two number on which you want to perform operation => \n");
+    scanf("%f %f",&a,&b);
+    send(client_sock,&a,sizeof(a),0);
+    send(client_sock,&b,sizeof(b),0);
+    printf("Client : a = %g b = %g\n",a,b);
+    printf("Server : Choose the following operation => \n");
+    printf("1)Addition \n2)Substraction \n3)Multiplication \n4)Division \n5)Modulus \n6)Exit");
+    scanf("%d",&N);
+    if(N==6)
+    {
+        bzero(buffer,1024);
+        recv(client_sock,buffer,sizeof(buffer),0);
+        printf("Server : %s\n",buffer);
+        break;
+    }
+    else if(N>6 && N<1)
+    {
+       bzero(buffer,1024);
+        recv(client_sock,buffer,sizeof(buffer),0);
+        printf("Server : %s\n",buffer);
+        goto b; 
+    }
+    else
+    {
+    send(client_sock,&N,sizeof(N),0);
+    recv(client_sock,&res,sizeof(res),0);
+    printf("Server : %g",res);
+    }
+    
+    b:
+    }
+
+
+
+
+
+
+    close(client_sock);
+    printf("Client disconnected from server\n");
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+server
+
+
+
+
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<string.h>
+#include<arpa/inet.h>
+#include<sys/types.h>
+#include<sys/socket.h>
+
+int main()
+{
+    char *ip="127.0.0.1";
+    int port = 5566;
+    char buffer[1024];
+    float a,b,res;
+    int N;
+
+    int server_sock,client_sock;
+    int n;
+    struct sockaddr_in server_addr,client_addr;
+    socklen_t addr_size;
+    server_sock = socket(AF_INET,SOCK_STREAM,0);
+    if(server_sock < 0)
+    {
+        perror("Socket Error");
+        exit(1);
+    }
+    printf("TCP Server Socket is Created\n");
+    memset(&server_addr,'\0',sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = port;
+    server_addr.sin_addr.s_addr = inet_addr(ip);
+
+    n = bind(server_sock,(struct sockaddr*)&server_addr,sizeof(server_addr));
+    if(n < 0)
+    {
+        perror("Bind Error");
+        exit(1);
+    }
+    printf("The Socket is bind with port no %d\n",port);
+    listen(server_sock,5);
+    printf("Listening......\n");
+
+    while(1)
+    {
+        addr_size=sizeof(client_addr);
+        client_sock = accept(server_sock,(struct sockaddr*)&client_addr,&addr_size);
+        printf("Client is connected\n");
+
+        bzero(buffer,1024);
+        strcpy(buffer,"Hello Client Welcome To Calculator! What can I help You?");
+        send(client_sock,buffer,sizeof(buffer),0);
+
+        while(1)
+        {
+        recv(client_sock,&a,sizeof(a),0);
+        recv(client_sock,&b,sizeof(b),0);
+        recv(client_sock,&N,sizeof(N),0);
+
+        switch(N)
+        {
+            case 1:
+            res=a+b;
+            send(client_sock,&res,sizeof(res),0);
+            break;
+
+            case 2:
+            res=a-b;
+            send(client_sock,&res,sizeof(res),0);
+            break;
+
+            case 3:
+            res=a*b;
+            send(client_sock,&res,sizeof(res),0);
+            break;
+
+            case 4:
+            res=a/b;
+            send(client_sock,&res,sizeof(res),0);
+            break;
+
+            case 5:
+            res=(int)a%(int)b;
+            send(client_sock,&res,sizeof(res),0);
+            break;
+
+            case 6:
+            bzero(buffer,1024);
+            strcpy(buffer,"Thank You Visit Agian!");
+            send(client_sock,buffer,sizeof(buffer),0);
+            goto b;
+
+            default:
+            bzero(buffer,1024);
+            strcpy(buffer,"Invalide Input!");
+            send(client_sock,buffer,sizeof(buffer),0);
+        }
+        }
+
+        b:
+
+        
+
+
+
+
+
+
+        close(client_sock);
+        printf("Client is Disconnected\n");
+    }
+    return 0;
+}
